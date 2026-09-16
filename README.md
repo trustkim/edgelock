@@ -112,19 +112,38 @@ Open http://localhost:8000 to view the real-time charging status, camera stream,
 ```json
 {
   "batch_id": "BATCH-2026-0916-01",
-  "product_name": "Product A",
-  "required_materials": [
+  "product_code": "PROD-101",
+  "product_name": "Product 101",
+  "batch_total_kg": 100.0,
+  "active_step": 1,
+  "recipe": [
     {
       "step": 1,
-      "item_code": "RM-01",
-      "allowed_lot": "LOT-202609A",
-      "status": "COMPLETED"
+      "material_code": "RM-A",
+      "material_name": "Base Solvent A",
+      "allowed_lot": "LOT-20260914A",
+      "target_weight_kg": 55.0
     },
     {
       "step": 2,
-      "item_code": "RM-02",
-      "allowed_lot": "LOT-202608C",
-      "status": "PENDING"
+      "material_code": "RM-B",
+      "material_name": "Resin B",
+      "allowed_lot": "LOT-20260914B",
+      "target_weight_kg": 30.0
+    },
+    {
+      "step": 3,
+      "material_code": "RM-C",
+      "material_name": "Colorant C",
+      "allowed_lot": "LOT-20260915C",
+      "target_weight_kg": 13.0
+    },
+    {
+      "step": 4,
+      "material_code": "RM-D",
+      "material_name": "Additive D",
+      "allowed_lot": "LOT-20260916D",
+      "target_weight_kg": 2.0
     }
   ]
 }
