@@ -68,17 +68,23 @@ Small-to-medium enterprises (SMEs) at the outer tier of the chemical manufacturi
 ```bash
 edgelock/
 ├── core/
-│   ├── detector.py          # Vision pipeline (Barcode + On-device OCR)
-│   ├── interlock.py         # GPIO relay control & safety latch
-│   └── validator.py         # BOM matching logic engine
+│   ├── detector.py              # Vision pipeline (Barcode + On-device OCR)
+│   ├── interlock.py             # GPIO relay control & safety latch
+│   └── validator.py             # BOM matching logic engine
 ├── data/
-│   ├── bom_sample.json      # Sample production batch recipes
-│   └── mock_labels/         # Sample test label images (Valid & Invalid)
+│   ├── assets/ghs/              # GHS pictogram icons (toxic, corrosive, etc.)
+│   ├── bom_sample.json          # Active production batch recipe
+│   ├── event_log.json           # Audit trail & material lifecycle log
+│   └── mock_labels/             # Synthetic test datasets
+│       ├── raw_labels/          # Standalone 2D barcode & text labels
+│       └── realistic_labels/     # Synthesized realistic container & drum images
+├── scripts/
+│   └── generate_mock_labels.py  # Synthetic label & realistic composite generator
 ├── web/
-│   ├── server.py            # Local dashboard API (FastAPI)
-│   └── static/              # Real-time operator dashboard UI
+│   ├── server.py                # Local dashboard API (FastAPI)
+│   └── static/                  # Real-time operator dashboard UI
 ├── tests/
-│   └── test_pipeline.py     # End-to-end mock test suite
+│   └── test_pipeline.py         # End-to-end mock test suite
 ├── requirements.txt
 └── README.md
 ```
