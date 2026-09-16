@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#020617">
+  <title>EdgeLock // Operator Interlock Console</title>
+  <script>
+    tailwind = { config: { theme: { extend: { boxShadow: {
+      panel: "0 0 0 1px rgba(51,65,85,.25), 0 24px 70px rgba(0,0,0,.32)",
+      emerald: "0 0 30px rgba(16,185,129,.18)",
+      danger: "0 0 60px rgba(239,68,68,.42)"
+    }}}}};
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { color-scheme: dark; }
+    * { scrollbar-color: #334155 #020617; }
+    body {
+      background-color: #020617;
+      background-image:
+        linear-gradient(rgba(16,185,129,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,185,129,.025) 1px, transparent 1px),
+        radial-gradient(circle at 18% 0%, rgba(5,150,105,.08), transparent 26%);
+      background-size: 32px 32px, 32px 32px, 100% 100%;
+    }
+    .cut-corners { clip-path: polygon(0 12px, 12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%); }
+    .scan-line { background: linear-gradient(180deg, transparent, rgba(16,185,129,.6), transparent); animation: scan 3.2s linear infinite; }
+    .hazard-strip { position: fixed; z-index: 100; pointer-events: none; background: repeating-linear-gradient(-45deg,#f59e0b,#f59e0b 25px,#050505 25px,#050505 50px); animation: hazard-shift .65s linear infinite; }
+    .hazard-top,.hazard-bottom { height: 24px; left: 0; right: 0; }
+    .hazard-top { top: 0; } .hazard-bottom { bottom: 0; }
+    .hazard-left,.hazard-right { width: 24px; top: 24px; bottom: 24px; }
+    .hazard-left { left: 0; } .hazard-right { right: 0; }
+    .noise { background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.015) 3px); }
+    .emergency-pulse { animation: emergency-pulse 1.35s ease-in-out infinite; }
+    @keyframes scan { from { transform: translateY(-120%); } to { transform: translateY(620%); } }
+    @keyframes hazard-shift { to { background-position: 71px 0; } }
+    @keyframes emergency-pulse { 0%,100% { background-color: rgba(69,10,10,.91); } 50% { background-color: rgba(127,29,29,.82); } }
+    @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
+  </style>
+</head>
+<body class="min-h-full text-slate-100 font-mono antialiased selection:bg-emerald-400 selection:text-slate-950">
+  <div id="appShell" class="min-h-screen">
+    <header class="border-b border-slate-800/90 bg-slate-950/85 backdrop-blur-xl sticky top-0 z-40">
+      <div class="mx-auto max-w-[1600px] h-20 px-4 sm:px-6 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4 min-w-0">
+          <div class="relative h-11 w-11 shrink-0 border border-emerald-500/60 bg-emerald-500/10 cut-corners grid place-items-center shadow-emerald">
+            <svg viewBox="0 0 24 24" class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h16v4H9v3h9v4H9v5H4V4Z"/><path d="M16 17h4v3h-4z" fill="currentColor"/></svg>
+          </div>
+          <div class="min-w-0">
+            <div class="flex items-baseline gap-3"><h1 class="text-xl sm:text-2xl font-black tracking-[-.08em]">EDGE<span class="text-emerald-400">LOCK</span></h1><span class="hidden sm:inline text-[9px] tracking-[.25em] text-slate-500">FAIL-SAFE VISION INTERLOCK</span></div>
+            <div class="mt-1 flex items-center gap-2 text-[10px] text-emerald-300"><span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-70"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span></span><span class="truncate">SiMa DevKit 3.0 ONLINE</span></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="hidden md:block text-right"><p id="utcClock" class="text-xs text-slate-300 tabular-nums">--:--:-- UTC</p><p class="text-[9px] text-slate-600 tracking-widest">REACTOR R-101 // NODE 03</p></div>
+          <a href="http://192.168.1.20:9000" target="_blank" rel="noopener noreferrer" class="group inline-flex items-center gap-2 border border-cyan-500/30 bg-cyan-950/20 px-3 py-2 text-[10px] sm:text-xs text-cyan-300 hover:bg-cyan-400 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-colors cut-corners">
+            <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V8m5 11V5m5 14v-7m5 7V3"/></svg><span class="hidden sm:inline">NEAT INSIGHT</span><span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-[1600px] p-4 sm:p-6 lg:p-8">
+      <section id="systemBanner" class="mb-6 border border-amber-500/50 bg-amber-950/20 px-4 py-3 cut-corners flex flex-col sm:flex-row sm:items-center justify-between gap-3" aria-live="polite">
+        <div class="flex items-center gap-3"><span id="bannerIcon" class="grid h-8 w-8 shrink-0 place-items-center border border-amber-400/50 text-amber-300">!</span><div><p id="bannerTitle" class="text-xs sm:text-sm font-bold tracking-wide text-amber-300">CONNECTING // SAFETY STATE UNKNOWN</p><p id="bannerDetail" class="text-[10px] text-slate-500 mt-0.5">Awaiting deterministic interlock telemetry…</p></div></div>
+        <div class="flex items-center gap-2 text-[9px] tracking-widest text-slate-500"><span>GPIO RELAY</span><span id="relayState" class="border border-slate-700 px-2 py-1 text-slate-300">SYNC</span></div>
+      </section>
+
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,.9fr)_minmax(0,1.1fr)] gap-6">
+        <section class="space-y-6 min-w-0">
+          <article class="border border-slate-800 bg-slate-900/65 shadow-panel cut-corners overflow-hidden">
+            <div class="flex items-center justify-between border-b border-slate-800 px-5 py-3 bg-slate-950/50"><div><p class="text-xs font-bold tracking-widest">01 // OPTICAL INPUT</p><p class="text-[9px] text-slate-600 mt-1">BARCODE + OCR ACQUISITION</p></div><span class="text-[9px] text-emerald-500">CAM-01 READY</span></div>
+            <div class="p-5">
+              <div id="dropZone" tabindex="0" role="button" aria-label="Upload a test label image" class="group relative h-64 sm:h-72 overflow-hidden border border-dashed border-slate-600 bg-slate-950/75 hover:border-emerald-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-colors cursor-pointer cut-corners">
+                <input id="fileInput" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp">
+                <img id="previewImage" alt="Selected material label preview" class="hidden absolute inset-0 h-full w-full object-cover opacity-50">
+                <div id="dropContent" class="relative z-10 h-full grid place-items-center text-center p-6">
+                  <div><div class="mx-auto mb-4 grid h-16 w-16 place-items-center border border-slate-700 bg-slate-900/90 text-slate-400 group-hover:text-emerald-400 group-hover:border-emerald-500/60 transition-colors"><svg viewBox="0 0 24 24" class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v5h14v-5"/></svg></div><p class="text-sm font-bold">DROP MATERIAL LABEL HERE</p><p class="mt-2 text-[10px] text-slate-500">or click to select // PNG, JPG, WEBP</p><p class="mt-5 text-[9px] tracking-[.2em] text-emerald-500/70">LOCAL EDGE INFERENCE • NO CLOUD EGRESS</p></div>
+                </div>
+                <div class="scan-line absolute left-0 right-0 top-0 h-16 opacity-30" aria-hidden="true"></div>
+              </div>
+              <div id="uploadStatus" class="mt-3 min-h-4 text-[10px] text-slate-500" aria-live="polite">Awaiting optical input.</div>
+            </div>
+          </article>
+
+          <article class="border border-slate-800 bg-slate-900/65 shadow-panel cut-corners overflow-hidden">
+            <div class="flex items-center justify-between border-b border-slate-800 px-5 py-3 bg-slate-950/50"><div><p class="text-xs font-bold tracking-widest">02 // RAPID TEST SEQUENCE</p><p class="text-[9px] text-slate-600 mt-1">PRESET MATERIAL SIMULATION</p></div><span id="presetCount" class="text-[9px] text-slate-500">SYNCING</span></div>
+            <div class="p-5 grid sm:grid-cols-2 gap-3">
+              <button id="passPreset" disabled class="text-left border border-emerald-500/35 bg-emerald-950/20 p-4 hover:bg-emerald-500 hover:text-slate-950 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-emerald-400 transition-colors cut-corners"><span class="block text-[9px] tracking-widest opacity-70">NOMINAL CONTROL</span><span class="block mt-2 text-sm font-bold">NORMAL RAW MATERIAL</span><span class="block mt-1 text-[10px] opacity-70">Expected recipe input // PASS</span></button>
+              <button id="blockPreset" disabled class="text-left border border-red-500/35 bg-red-950/20 p-4 hover:bg-red-500 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors cut-corners"><span class="block text-[9px] tracking-widest opacity-70">FAULT INJECTION</span><span class="block mt-2 text-sm font-bold">MISMATCHED MATERIAL</span><span class="block mt-1 text-[10px] opacity-70">Unauthorized recipe input // LOCK</span></button>
+            </div>
+          </article>
+
+          <article id="resultCard" class="border border-slate-800 bg-slate-900/65 shadow-panel cut-corners overflow-hidden transition-colors">
+            <div class="flex items-center justify-between border-b border-slate-800 px-5 py-3 bg-slate-950/50"><div><p class="text-xs font-bold tracking-widest">03 // LIVE INSPECTION RESULT</p><p class="text-[9px] text-slate-600 mt-1">DETERMINISTIC VALIDATION OUTPUT</p></div><span id="resultStatus" class="border border-slate-700 px-2 py-1 text-[9px] text-slate-400">STANDBY</span></div>
+            <div class="p-5 grid grid-cols-2 sm:grid-cols-3 gap-px bg-slate-800">
+              <div class="bg-slate-950 p-4"><p class="text-[9px] tracking-widest text-slate-600">PARSED BARCODE</p><p id="barcodeValue" class="mt-3 text-lg font-black text-slate-300 break-all">—</p></div>
+              <div class="bg-slate-950 p-4"><p class="text-[9px] tracking-widest text-slate-600">OCR / LOT TEXT</p><p id="ocrValue" class="mt-3 text-sm font-bold text-slate-300 break-all">—</p></div>
+              <div class="col-span-2 sm:col-span-1 bg-slate-950 p-4"><p class="text-[9px] tracking-widest text-slate-600">EDGE LATENCY</p><p class="mt-3 text-lg font-black text-slate-300"><span id="latencyValue">—</span><span class="ml-1 text-[10px] text-slate-600">MS</span></p></div>
+            </div>
+            <p id="resultDetails" class="px-5 py-4 text-[10px] leading-relaxed text-slate-500">No inspection has been run during this session.</p>
+          </article>
+        </section>
+
+        <section class="space-y-6 min-w-0">
+          <article class="border border-slate-800 bg-slate-900/65 shadow-panel cut-corners overflow-hidden">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 px-5 py-3 bg-slate-950/50"><div><p class="text-xs font-bold tracking-widest">ACTIVE BOM // TARGET SPECIFICATIONS</p><p id="batchMeta" class="text-[9px] text-slate-600 mt-1">LOADING RECIPE CONTROL…</p></div><div class="flex gap-2"><span id="activeStepBadge" class="border border-violet-500/30 bg-violet-950/30 px-2 py-1 text-[9px] text-violet-300">STEP —</span><span id="batchTotal" class="border border-slate-700 px-2 py-1 text-[9px] text-slate-400">— KG</span></div></div>
+            <div class="overflow-x-auto"><table class="w-full text-left"><thead class="bg-slate-950/70 text-[9px] tracking-widest text-slate-600"><tr><th class="px-5 py-3 font-normal">SEQ</th><th class="px-3 py-3 font-normal">MATERIAL / CODE</th><th class="px-3 py-3 font-normal">AUTHORIZED LOT</th><th class="px-5 py-3 font-normal text-right">TARGET</th></tr></thead><tbody id="bomBody" class="divide-y divide-slate-800 text-xs"><tr><td colspan="4" class="px-5 py-8 text-center text-slate-600">Synchronizing BOM…</td></tr></tbody></table></div>
+          </article>
+
+          <article class="border border-slate-800 bg-slate-900/65 shadow-panel cut-corners overflow-hidden">
+            <div class="flex items-center justify-between border-b border-slate-800 px-5 py-3 bg-slate-950/50"><div><p class="text-xs font-bold tracking-widest">REAL-TIME AUDIT TRAIL</p><p class="text-[9px] text-slate-600 mt-1">APPEND-ONLY PLANT EVENT LEDGER</p></div><div class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse"></span><span class="text-[9px] text-cyan-400">LIVE / 5S</span></div></div>
+            <div class="max-h-[560px] overflow-auto"><table class="w-full text-left"><thead class="sticky top-0 z-10 bg-slate-950 text-[9px] tracking-widest text-slate-600"><tr><th class="px-5 py-3 font-normal">TIME / EVENT</th><th class="px-3 py-3 font-normal">MATERIAL</th><th class="px-3 py-3 font-normal">OPERATOR</th><th class="px-5 py-3 font-normal text-right">SIGNAL</th></tr></thead><tbody id="logBody" class="divide-y divide-slate-800 text-[10px]"><tr><td colspan="4" class="px-5 py-10 text-center text-slate-600">Loading audit ledger…</td></tr></tbody></table></div>
+          </article>
+        </section>
+      </div>
+    </main>
+
+    <footer class="mx-auto max-w-[1600px] px-4 sm:px-6 pb-8"><div class="border-t border-slate-800 pt-4 flex flex-col sm:flex-row gap-2 justify-between text-[9px] tracking-widest text-slate-700"><span>EDGELOCK SAFETY CONTROL // DEFAULT DENY ARCHITECTURE</span><span>INFERENCE: LOCAL // TELEMETRY: ACTIVE // GPIO: FAIL-SAFE</span></div></footer>
+  </div>
+
+  <div id="hazardFrame" class="hidden" aria-hidden="true"><i class="hazard-strip hazard-top"></i><i class="hazard-strip hazard-right"></i><i class="hazard-strip hazard-bottom"></i><i class="hazard-strip hazard-left"></i></div>
+
+  <div id="emergencyModal" class="hidden fixed inset-0 z-[95] emergency-pulse noise p-6 sm:p-10 lg:p-16 overflow-y-auto" role="alertdialog" aria-modal="true" aria-labelledby="emergencyTitle">
+    <div class="min-h-full grid place-items-center">
+      <div class="relative w-full max-w-6xl border-4 border-red-500 bg-black/90 shadow-danger cut-corners">
+        <div class="flex items-center justify-between gap-4 border-b-4 border-red-500 bg-red-600 px-5 py-4 text-white"><h2 id="emergencyTitle" class="text-sm sm:text-xl lg:text-2xl font-black tracking-tight">⚠ [ EMERGENCY // INTERLOCK ENGAGED ]</h2><span class="hidden sm:inline text-xs font-bold animate-pulse">ALARM ACTIVE</span></div>
+        <div class="p-6 sm:p-10 lg:p-12 text-center">
+          <p class="text-[10px] sm:text-xs tracking-[.35em] text-red-400">DEFAULT DENY SAFETY PROTOCOL // GPIO RELAY DE-ENERGIZED</p>
+          <p class="my-8 text-4xl sm:text-6xl lg:text-7xl font-black tracking-[-.07em] leading-[.9] text-white">CRITICAL MISMATCH<br><span class="text-red-500">DETECTED</span> // GATE LOCKED</p>
+          <div class="mx-auto grid max-w-4xl md:grid-cols-2 gap-px bg-red-500 border border-red-500 text-left">
+            <div class="bg-slate-950 p-5 sm:p-7"><p class="text-[9px] tracking-[.25em] text-emerald-400">EXPECTED MATERIAL</p><p id="expectedMaterial" class="mt-3 text-xl sm:text-2xl font-black text-white">—</p><p id="expectedLot" class="mt-2 text-xs text-slate-500">AUTHORIZED LOT: —</p></div>
+            <div class="bg-red-950/80 p-5 sm:p-7"><p class="text-[9px] tracking-[.25em] text-red-300">DETECTED INPUT</p><p id="detectedMaterial" class="mt-3 text-xl sm:text-2xl font-black text-red-300">UNKNOWN / UNREADABLE</p><p id="detectedOcr" class="mt-2 text-xs text-red-400/70">OCR: —</p></div>
+          </div>
+          <p id="emergencyReason" class="mx-auto mt-6 max-w-4xl text-xs leading-relaxed text-red-200/70">Safety state reported a locked interlock.</p>
+          <button id="resetEmergency" class="mt-8 min-w-[280px] border-2 border-amber-300 bg-amber-300 px-6 py-4 text-sm font-black tracking-wide text-black hover:bg-white hover:border-white focus:outline-none focus:ring-4 focus:ring-white/40 transition-colors cut-corners">OVERRIDE / RESET SYSTEM</button>
+          <p class="mt-3 text-[9px] text-slate-500">ACKNOWLEDGES DISPLAY ALARM ONLY // PHYSICAL INTERLOCK REMAINS AUTHORITATIVE</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="fixed bottom-6 right-6 z-[120] hidden max-w-sm border border-red-500/60 bg-slate-950 px-4 py-3 text-xs text-red-300 shadow-danger cut-corners" role="status"></div>
+
+  <script>
+    (() => {
+      'use strict';
+      const $ = (id) => document.getElementById(id);
+      const state = { bom: null, presets: [], result: null, busy: false, modalAcknowledged: false, lockSignature: '', objectUrl: null };
+      const lockWords = new Set(['LOCK', 'LOCKED', 'BLOCKED', 'ENGAGED', 'TRIGGERED', 'FAIL']);
+      const isLocked = (value) => lockWords.has(String(value || '').toUpperCase());
+      const esc = (value) => String(value ?? '—').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+      async function api(path, options = {}) {
+        const response = await fetch(path, { cache: 'no-store', ...options, headers: { ...(options.body instanceof FormData ? {} : {'Content-Type':'application/json'}), ...(options.headers || {}) } });
+        if (!response.ok) { let message = `HTTP ${response.status}`; try { const body = await response.json(); message = body.detail || body.message || message; } catch {} throw new Error(message); }
+        return response.json();
+      }
+
+      function toast(message) {
+        $('toast').textContent = message; $('toast').classList.remove('hidden');
+        clearTimeout(toast.timer); toast.timer = setTimeout(() => $('toast').classList.add('hidden'), 4500);
+      }
+
+      function expectedItem() {
+        return state.bom?.recipe?.find(item => Number(item.step) === Number(state.bom.active_step)) || state.bom?.recipe?.[0] || {};
+      }
+
+      function normalizeResult(raw, measuredLatency) {
+        const validation = raw.validation || {};
+        const event = raw.event_record || {};
+        const action = raw.interlock_action || validation.interlock_action || event.interlock_status || raw.status;
+        return {
+          locked: isLocked(action) || String(raw.status || '').toUpperCase() === 'BLOCKED',
+          status: raw.status || validation.status || (isLocked(action) ? 'BLOCKED' : 'PASSED'),
+          barcode: raw.barcode || raw.scanned_code || validation.scanned_code || event.material_code || 'UNREADABLE',
+          ocr: raw.ocr || raw.scanned_lot || validation.scanned_lot || event.lot_no || 'UNREADABLE',
+          latency: Number.isFinite(Number(raw.latency_ms)) ? Number(raw.latency_ms) : Math.round(measuredLatency),
+          details: raw.details || validation.reason || event.note || 'Validation pipeline complete.',
+          imageUrl: raw.image_url || '', eventId: event.event_id || raw.event_id || ''
+        };
+      }
+
+      function renderSystem(status = {}) {
+        const locked = isLocked(status.interlock_state || status.status);
+        const banner = $('systemBanner');
+        banner.className = `mb-6 border px-4 py-3 cut-corners flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${locked ? 'border-red-500 bg-red-950/35 shadow-danger' : 'border-emerald-500 bg-emerald-950/30 shadow-emerald'}`;
+        $('bannerIcon').className = `grid h-8 w-8 shrink-0 place-items-center border ${locked ? 'border-red-400/70 text-red-300' : 'border-emerald-400/70 text-emerald-300'}`;
+        $('bannerIcon').textContent = locked ? '×' : '✓';
+        $('bannerTitle').className = `text-xs sm:text-sm font-bold tracking-wide ${locked ? 'text-red-300' : 'text-emerald-300'}`;
+        $('bannerTitle').textContent = locked ? 'GATE LOCKED // INTERLOCK ENGAGED' : `GATE UNLOCKED // RECIPE VERIFIED${state.result ? ` (${state.result.latency}ms)` : ''}`;
+        $('bannerDetail').textContent = `${status.batch_id || state.bom?.batch_id || 'ACTIVE BATCH'} // ${status.product_name || state.bom?.product_name || 'RECIPE CONTROL'} // STEP ${status.active_step ?? state.bom?.active_step ?? '—'}`;
+        $('relayState').textContent = locked ? 'LOCK' : 'UNLOCK';
+        $('relayState').className = `border px-2 py-1 text-[9px] ${locked ? 'border-red-500/60 text-red-300 bg-red-950/40' : 'border-emerald-500/60 text-emerald-300 bg-emerald-950/40'}`;
+        if (locked) triggerEmergency(state.result, `status:${status.interlock_state || status.status}`);
+        else closeEmergency(true);
+      }
+
+      function renderBom(bom) {
+        state.bom = bom || {};
+        $('batchMeta').textContent = `${bom.batch_id || 'UNKNOWN BATCH'} // ${bom.product_code || 'NO PRODUCT CODE'} // ${bom.product_name || 'UNNAMED PRODUCT'}`;
+        $('activeStepBadge').textContent = `STEP ${bom.active_step ?? '—'}`;
+        $('batchTotal').textContent = `${bom.batch_total_kg ?? '—'} KG`;
+        const recipe = Array.isArray(bom.recipe) ? bom.recipe : [];
+        $('bomBody').innerHTML = recipe.length ? recipe.map(item => {
+          const active = Number(item.step) === Number(bom.active_step);
+          return `<tr class="${active ? 'bg-violet-950/25 text-white' : 'text-slate-400'}">
+            <td class="px-5 py-4"><span class="inline-grid h-7 w-7 place-items-center border ${active ? 'border-violet-400 bg-violet-500 text-white' : 'border-slate-700 text-slate-500'}">${esc(String(item.step).padStart(2,'0'))}</span></td>
+            <td class="px-3 py-4"><span class="block font-bold ${active ? 'text-violet-200' : 'text-slate-300'}">${esc(item.material_name)}</span><span class="mt-1 block text-[9px] text-slate-600">${esc(item.material_code)}</span></td>
+            <td class="px-3 py-4 tabular-nums">${esc(item.allowed_lot)}</td><td class="px-5 py-4 text-right tabular-nums">${esc(item.target_weight_kg)} <span class="text-slate-600">KG</span></td></tr>`;
+        }).join('') : '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-600">No recipe items returned.</td></tr>';
+      }
+
+      function renderLogs(logs) {
+        const rows = Array.isArray(logs) ? [...logs].reverse() : [];
+        $('logBody').innerHTML = rows.length ? rows.slice(0,50).map(log => {
+          const locked = isLocked(log.interlock_status) || /BLOCK|FAIL/i.test(log.event_type || '');
+          const passed = /PASS|UNLOCK/i.test(`${log.interlock_status} ${log.event_type}`);
+          const signalClass = locked ? 'border-red-500/50 bg-red-950/40 text-red-300' : passed ? 'border-emerald-500/50 bg-emerald-950/40 text-emerald-300' : 'border-slate-700 text-slate-500';
+          const stamp = log.timestamp ? new Date(log.timestamp) : null;
+          return `<tr class="hover:bg-slate-800/30" title="${esc(log.note || '')}"><td class="px-5 py-4"><span class="block text-slate-300">${esc(log.event_type)}</span><span class="mt-1 block text-[9px] text-slate-600 tabular-nums">${stamp && !Number.isNaN(stamp.valueOf()) ? esc(stamp.toISOString().replace('T',' ').slice(0,19)) : '—'}</span></td><td class="px-3 py-4"><span class="block text-slate-300">${esc(log.material_code)}</span><span class="mt-1 block text-[9px] text-slate-600">${esc(log.lot_no)}</span></td><td class="px-3 py-4 text-slate-500">${esc(log.operator_id)}</td><td class="px-5 py-4 text-right"><span class="inline-block border px-2 py-1 text-[9px] ${signalClass}">${esc(log.interlock_status || 'LOG')}</span></td></tr>`;
+        }).join('') : '<tr><td colspan="4" class="px-5 py-10 text-center text-slate-600">No audit records returned.</td></tr>';
+      }
+
+      function renderResult(result) {
+        state.result = result;
+        $('barcodeValue').textContent = result.barcode; $('ocrValue').textContent = result.ocr; $('latencyValue').textContent = result.latency; $('resultDetails').textContent = result.details;
+        $('resultStatus').textContent = result.locked ? 'BLOCKED' : 'PASSED';
+        $('resultStatus').className = `border px-2 py-1 text-[9px] ${result.locked ? 'border-red-500 bg-red-950/50 text-red-300' : 'border-emerald-500 bg-emerald-950/50 text-emerald-300'}`;
+        $('resultCard').className = `border bg-slate-900/65 shadow-panel cut-corners overflow-hidden transition-colors ${result.locked ? 'border-red-500/70 shadow-danger' : 'border-emerald-500/70 shadow-emerald'}`;
+        if (result.imageUrl) { $('previewImage').src = result.imageUrl; $('previewImage').classList.remove('hidden'); }
+        state.modalAcknowledged = false;
+        if (result.locked) triggerEmergency(result, result.eventId || `${result.barcode}:${result.ocr}:${Date.now()}`);
+      }
+
+      async function verifyPreset(kind) {
+        const item = expectedItem();
+        const code = String(item.material_code || '').toUpperCase();
+        const pass = state.presets.find(p => String(p.filename || p.name || p).toUpperCase().includes(`_${code}_`)) || state.presets[0];
+        const block = state.presets.find(p => /RM-G|INVALID|MISMATCH|UNAUTHORIZED/i.test(String(p.filename || p.name || p))) || state.presets.find(p => !String(p.filename || p.name || p).toUpperCase().includes(`_${code}_`));
+        const preset = kind === 'pass' ? pass : block;
+        if (!preset) return toast(`No ${kind} preset is available from /api/presets.`);
+        const filename = preset.filename || preset.name || preset;
+        setBusy(true, `Running ${filename}…`);
+        const started = performance.now();
+        try {
+          let raw;
+          try { raw = await api('/api/verify/preset', { method:'POST', body:JSON.stringify({preset_filename:filename, preset_name:filename}) }); }
+          catch (error) { if (/422/.test(error.message)) raw = await api('/api/verify/preset', { method:'POST', body:JSON.stringify({preset_name:filename}) }); else throw error; }
+          renderResult(normalizeResult(raw, performance.now() - started));
+          await refreshAll(false);
+        } catch (error) { toast(`Verification failed: ${error.message}`); }
+        finally { setBusy(false); }
+      }
+
+      async function verifyUpload(file) {
+        if (!file?.type?.startsWith('image/')) return toast('Select a supported image file.');
+        if (file.size > 20 * 1024 * 1024) return toast('Image exceeds the 20 MB safety limit.');
+        if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+        state.objectUrl = URL.createObjectURL(file); $('previewImage').src = state.objectUrl; $('previewImage').classList.remove('hidden');
+        const form = new FormData(); form.append('file', file, file.name);
+        setBusy(true, `Inspecting ${file.name}…`); const started = performance.now();
+        try { const raw = await api('/api/verify/upload', { method:'POST', body:form }); renderResult(normalizeResult(raw, performance.now() - started)); await refreshAll(false); }
+        catch (error) { toast(`Upload verification failed: ${error.message}`); }
+        finally { setBusy(false); }
+      }
+
+      function setBusy(busy, message = 'Awaiting optical input.') {
+        state.busy = busy; $('passPreset').disabled = busy || !state.presets.length; $('blockPreset').disabled = busy || !state.presets.length;
+        $('uploadStatus').textContent = message; $('uploadStatus').className = `mt-3 min-h-4 text-[10px] ${busy ? 'text-cyan-300 animate-pulse' : 'text-slate-500'}`;
+      }
+
+      function triggerEmergency(result, signature) {
+        state.lockSignature = signature;
+        $('hazardFrame').classList.remove('hidden');
+        if (state.modalAcknowledged) return;
+        const expected = expectedItem();
+        $('expectedMaterial').textContent = `${expected.material_code || '—'} // ${expected.material_name || 'UNKNOWN'}`;
+        $('expectedLot').textContent = `AUTHORIZED LOT: ${expected.allowed_lot || '—'}`;
+        $('detectedMaterial').textContent = result?.barcode || 'UNKNOWN / UNREADABLE';
+        $('detectedOcr').textContent = `OCR: ${result?.ocr || '—'}`;
+        $('emergencyReason').textContent = result?.details || 'The safety controller reports a locked interlock. Verify the material and physical gate before continuing.';
+        $('emergencyModal').classList.remove('hidden'); document.body.classList.add('overflow-hidden');
+        setTimeout(() => $('resetEmergency').focus(), 20); playAlarm();
+      }
+
+      function closeEmergency(unlocked = false) {
+        $('emergencyModal').classList.add('hidden'); document.body.classList.remove('overflow-hidden');
+        if (unlocked) { $('hazardFrame').classList.add('hidden'); state.modalAcknowledged = false; }
+      }
+
+      function playAlarm() {
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext; if (!AudioCtx) return;
+          const ctx = new AudioCtx(); const start = ctx.currentTime;
+          [0, .24, .55, .79].forEach((offset, i) => { const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.type = 'square'; osc.frequency.value = i % 2 ? 660 : 440; gain.gain.setValueAtTime(.0001, start + offset); gain.gain.exponentialRampToValueAtTime(.11, start + offset + .015); gain.gain.exponentialRampToValueAtTime(.0001, start + offset + .2); osc.connect(gain).connect(ctx.destination); osc.start(start + offset); osc.stop(start + offset + .22); });
+          setTimeout(() => ctx.close(), 1300);
+        } catch { /* Browser may require a user gesture; visual alarm remains authoritative. */ }
+      }
+
+      async function refreshAll(initial = false) {
+        const requests = await Promise.allSettled([api('/api/status'), api('/api/bom'), api('/api/logs?limit=50'), initial ? api('/api/presets') : Promise.resolve(null)]);
+        if (requests[1].status === 'fulfilled') renderBom(requests[1].value);
+        if (requests[2].status === 'fulfilled') renderLogs(requests[2].value);
+        if (initial && requests[3].status === 'fulfilled') { state.presets = Array.isArray(requests[3].value) ? requests[3].value : requests[3].value.presets || []; $('presetCount').textContent = `${state.presets.length} PRESETS READY`; setBusy(false); }
+        if (requests[0].status === 'fulfilled') renderSystem(requests[0].value);
+        const failed = requests.slice(0, initial ? 4 : 3).filter(r => r.status === 'rejected');
+        if (failed.length && initial) toast(`${failed.length} API channel${failed.length > 1 ? 's' : ''} unavailable. Retrying automatically.`);
+      }
+
+      $('passPreset').addEventListener('click', () => verifyPreset('pass'));
+      $('blockPreset').addEventListener('click', () => verifyPreset('block'));
+      $('dropZone').addEventListener('click', () => !state.busy && $('fileInput').click());
+      $('dropZone').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && !state.busy) { e.preventDefault(); $('fileInput').click(); } });
+      $('fileInput').addEventListener('change', e => verifyUpload(e.target.files[0]));
+      ['dragenter','dragover'].forEach(name => $('dropZone').addEventListener(name, e => { e.preventDefault(); $('dropZone').classList.add('border-emerald-400','bg-emerald-950/30'); }));
+      ['dragleave','drop'].forEach(name => $('dropZone').addEventListener(name, e => { e.preventDefault(); $('dropZone').classList.remove('border-emerald-400','bg-emerald-950/30'); }));
+      $('dropZone').addEventListener('drop', e => !state.busy && verifyUpload(e.dataTransfer.files[0]));
+      $('resetEmergency').addEventListener('click', async () => { state.modalAcknowledged = true; closeEmergency(false); try { const status = await api('/api/status'); renderSystem(status); } catch (error) { toast(`Status reload failed: ${error.message}`); } });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('emergencyModal').classList.contains('hidden')) { state.modalAcknowledged = true; closeEmergency(false); } });
+      setInterval(() => { $('utcClock').textContent = `${new Date().toISOString().slice(11,19)} UTC`; }, 1000);
+      setInterval(() => refreshAll(false), 5000);
+      refreshAll(true);
+    })();
+  </script>
+</body>
+</html>
