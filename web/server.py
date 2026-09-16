@@ -154,6 +154,13 @@ def _process_image_pipeline(image_path: str, operator_id: str, location: str) ->
         location=location,
     )
 
+    # Mirrors core/detector.py's run_pipeline(): only advance active_step
+    # after a genuine UNLOCK, never on a LOCK/deny decision. Without this,
+    # every material charged through the dashboard after the first one
+    # would incorrectly LOCK on SEQUENCE_ERROR even when scanned correctly.
+    if val_result["interlock_action"] == "UNLOCK":
+        validator.advance_active_step()
+
     return {
         "scanned_code": scanned_code,
         "scanned_lot": scanned_lot,

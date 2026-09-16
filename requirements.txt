@@ -9,6 +9,12 @@ numpy>=1.26.0
 # Label dataset generation (dev/demo only)
 python-barcode>=0.15.1
 
+# Operator dashboard API (web/server.py)
+fastapi>=0.115.0
+uvicorn>=0.30.0
+pydantic>=2.7.0
+python-multipart>=0.0.9
+
 # System requirements (not pip-installable, install via OS package manager):
 #   - zbar shared library   (macOS: brew install zbar | Debian/Ubuntu: apt install libzbar0)
 #   - tesseract-ocr binary  (macOS: brew install tesseract | Debian/Ubuntu: apt install tesseract-ocr)
