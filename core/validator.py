@@ -98,7 +98,23 @@ class BOMValidator:
 
         # 3. Lot Number Verification
         allowed_lot = str(matched_item.get("allowed_lot", "")).strip().upper()
-        if allowed_lot and lot_clean and allowed_lot != lot_clean:
+        if allowed_lot and not lot_clean:
+            # Fail-safe deny: a required lot that OCR/scan couldn't read must NOT
+            # be treated as a silent pass. Without this, a blurry/degraded label
+            # (barcode readable, lot text not) would unlock on material code alone.
+            return {
+                "timestamp": timestamp,
+                "batch_id": batch_id,
+                "scanned_code": code_clean,
+                "scanned_lot": lot_clean,
+                "status": "LOT_UNREADABLE",
+                "interlock_action": "LOCK",
+                "reason": (
+                    f"LOT UNREADABLE: Batch requires Lot [{allowed_lot}], but no lot number "
+                    f"was decoded from the scanned label. Fail-safe deny enforced."
+                ),
+            }
+        if allowed_lot and allowed_lot != lot_clean:
             return {
                 "timestamp": timestamp,
                 "batch_id": batch_id,
@@ -188,6 +204,7 @@ if __name__ == "__main__":
         ("RM-G", "LOT-20260820G", "Scenario 2: Unauthorized Raw Material (Default Deny)"),
         ("RM-B", "LOT-20260902B", "Scenario 3: Sequence Violation (Step 2 Premature Feed)"),
         ("RM-A", "LOT-9999999X", "Scenario 4: Lot Number Mismatch (Defective Lot)"),
+        ("RM-A", "", "Scenario 5: Lot Unreadable (Degraded Label, Fail-Safe Deny)"),
     ]
 
     print(f"\n{CLR_BOLD}======================================================================{CLR_RESET}")
