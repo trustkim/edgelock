@@ -22,3 +22,129 @@ Small-to-medium enterprises (SMEs) at the outer tier of the chemical manufacturi
 ## 💡 Solution: EdgeLock
 
 **EdgeLock** acts as a retrofit, empathetic safety net for shop-floor operators. Deployed directly at the reactor vessel feeding hatch, EdgeLock uses on-device edge AI to validate ingredients in milliseconds before they enter the reaction process.
+
+```
+[ Raw Material Label ]
+  (Barcode / Lot text / Bag)
+              │
+              ▼
+     [ Wide-Angle Camera ]
+              │
+              ▼
+ ┌─────────────────────────────┐
+ │   SiMA Dev Kit 3.0 (MLSoC)  │  <-- Sealed Inside Standard
+ │  - Fast Barcode / QR Decode │      Explosion-Proof Enclosure
+ │  - Low-Latency On-Device OCR│      (Ultra-low power, Fanless)
+ └────────────┬────────────────┘
+              │
+              ▼
+  [ Active BOM Validation ]
+              │
+    ┌─────────┴─────────┐
+ [ MATCH ]          [ MISMATCH ]
+    │                   │
+    ▼                   ▼
+[ GPIO: Unlock Gate ]  [ GPIO: Lock Hatch  ]
+[ Log to Plant DB   ]  [ Sound Alarm Light ]
+[ Operator: PROCEED ]  [ Operator: STOP    ]
+```
+
+1. **Multi-Modal Vision Verification**: Extracts Code 128 / QR codes and deep-learning OCR Lot numbers simultaneously, handling crumpled, stained, or non-standard supplier labels.
+2. **Deterministic GPIO Interlock**: Compares decoded Lot numbers against active production Bills of Materials (BOM). On mismatch, a hardware relay physically locks the hopper hatch in <50ms.
+3. **End-to-End Plant Traceability**: Successful charges generate an immutable audit log linking warehouse dispatch, operator ID, and reactor charging timestamps.
+
+---
+
+## ⚡ Why SiMA Dev Kit 3.0?
+
+* **Fanless in Sealed Enclosures**: Traditional AI accelerators generate excessive heat, requiring costly thermal solutions inside sealed explosion-proof housings (NEMA 7 / ATEX). SiMA MLSoC's market-leading **TOPS/Watt** efficiency allows continuous fanless operation inside off-the-shelf housings.
+* **Zero-Latency Offline Autonomy**: Operates 100% locally with no cloud dependency, ensuring sub-50ms safety interlocks even during complete network dropouts.
+* **Native Industrial I/O**: Direct GPIO/Serial signaling bridges modern computer vision pipelines with legacy PLC valves and warning relays.
+
+---
+
+## 🗂 Project Structure
+
+```bash
+edgelock/
+├── core/
+│   ├── detector.py          # Vision pipeline (Barcode + On-device OCR)
+│   ├── interlock.py         # GPIO relay control & safety latch
+│   └── validator.py         # BOM matching logic engine
+├── data/
+│   ├── bom_sample.json      # Sample production batch recipes
+│   └── mock_labels/         # Sample test label images (Valid & Invalid)
+├── web/
+│   ├── server.py            # Local dashboard API (FastAPI)
+│   └── static/              # Real-time operator dashboard UI
+├── tests/
+│   └── test_pipeline.py     # End-to-end mock test suite
+├── requirements.txt
+└── README.md
+```
+
+## 🚀 Quick Start (Local & Mock Mode)
+Run EdgeLock in simulation mode on any workstation without physical hardware connected:
+
+### 1. Clone & Install Dependencies
+```bash
+git clone [https://github.com/](https://github.com/)<your-username>/edgelock.git
+cd edgelock
+python3 -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 2. Run Pipeline in Mock Mode
+```bash
+# Simulates label recognition and mock GPIO relay output using test assets
+python core/detector.py --input data/mock_labels/sample_valid.jpg --mock-gpio
+```
+
+### 3. Launch Operator Dashboard
+```bash
+uvicorn web.server:app --reload --port 8000
+```
+Open http://localhost:8000 to view the real-time charging status, camera stream, and batch audit log.
+
+## 📊 Data Schema Example
+### Active Batch BOM (data/bom_sample.json)
+```json
+{
+  "batch_id": "BATCH-2026-0916-01",
+  "product_name": "Product A",
+  "required_materials": [
+    {
+      "step": 1,
+      "item_code": "RM-01",
+      "allowed_lot": "LOT-202609A",
+      "status": "COMPLETED"
+    },
+    {
+      "step": 2,
+      "item_code": "RM-02",
+      "allowed_lot": "LOT-202608C",
+      "status": "PENDING"
+    }
+  ]
+}
+```
+### Verification Event Output
+```json
+{
+  "timestamp": "2026-09-16T08:15:32Z",
+  "batch_id": "BATCH-2026-0916-01",
+  "scanned_item": "RM-02",
+  "scanned_lot": "LOT-202608C",
+  "result": "PASS",
+  "interlock_action": "GATE_UNLOCKED"
+}
+```
+
+## 👥 Team EdgeLock
+Developed on-site for the AI Infra Summit 2026 Hackathon (Santa Clara, CA) supported by SiMA.ai & Lablab.ai.
+
+* Mideum Kim - Concept, Industrial Pipeline, Edge Vision & Embedded Integration
+
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
