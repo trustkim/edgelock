@@ -177,6 +177,7 @@ Open http://localhost:8000 to view the real-time charging status, camera stream,
 Developed on-site for the AI Infra Summit 2026 Hackathon (Santa Clara, CA) supported by SiMA.ai & Lablab.ai.
 
 * Mideum Kim - Concept, Industrial Pipeline, Edge Vision & Embedded Integration
-
+* Bugra Veysel Yildiz - Barcode/OCR Detection Hardening, BOM Sequencing Fail-Safes & QA
+  
 ## 📄 License
 This project is licensed under the MIT License - see the LICENSE file for details.
