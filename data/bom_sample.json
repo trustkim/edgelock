@@ -9,28 +9,28 @@
       "step": 1,
       "material_code": "RM-A",
       "material_name": "Base Solvent A",
-      "allowed_lot": "LOT-20260914A",
+      "allowed_lot": "LOT-20260901A",
       "target_weight_kg": 55.0
     },
     {
       "step": 2,
       "material_code": "RM-B",
       "material_name": "Resin B",
-      "allowed_lot": "LOT-20260914B",
+      "allowed_lot": "LOT-20260902B",
       "target_weight_kg": 30.0
     },
     {
       "step": 3,
       "material_code": "RM-C",
       "material_name": "Colorant C",
-      "allowed_lot": "LOT-20260915C",
+      "allowed_lot": "LOT-20260903C",
       "target_weight_kg": 13.0
     },
     {
       "step": 4,
       "material_code": "RM-D",
       "material_name": "Additive D",
-      "allowed_lot": "LOT-20260916D",
+      "allowed_lot": "LOT-20260904D",
       "target_weight_kg": 2.0
     }
   ]

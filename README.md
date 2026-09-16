@@ -151,12 +151,19 @@ Open http://localhost:8000 to view the real-time charging status, camera stream,
 ### Verification Event Output
 ```json
 {
-  "timestamp": "2026-09-16T08:15:32Z",
+  "event_id": "EVT-2026-0025",
+  "timestamp": "2026-09-16T09:20:30Z",
+  "event_type": "CHARGE_BLOCKED",
+  "operator_id": "mfg01",
+  "department": "MFG",
+  "location": "Reactor R-101 Hatch",
+  "material_code": "RM-G",
+  "material_name": "Additive G (Floor Leftover)",
+  "lot_no": "LOT-20260820G",
+  "quantity_kg": 2.0,
   "batch_id": "BATCH-2026-0916-01",
-  "scanned_item": "RM-02",
-  "scanned_lot": "LOT-202608C",
-  "result": "PASS",
-  "interlock_action": "GATE_UNLOCKED"
+  "interlock_status": "LOCK",
+  "note": "CRITICAL INTERLOCK: Operator attempted to charge unapproved RM-G at Step 4 (Expected RM-D). Hatch locked, audible alarm activated."
 }
 ```
 
