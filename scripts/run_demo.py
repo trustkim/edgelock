@@ -13,9 +13,18 @@ Usage:
     python3 scripts/run_demo.py                 # default pacing (1.5s/frame)
     python3 scripts/run_demo.py --delay 0        # no pauses, fast run for testing
     python3 scripts/run_demo.py --reset-log      # start audit log fresh for this recording
+    python3 scripts/run_demo.py --keep-bom-state # don't reset active_step to 1 first
+
+Note: run_pipeline() persists active_step to data/bom_sample.json on every
+UNLOCK (that's the whole point of the sequence-progression fix this demo
+exists to show off). By default this script resets active_step back to 1
+before each run so the story is reproducible take after take -- pass
+--keep-bom-state if you deliberately want to continue from wherever a
+previous run left the BOM.
 """
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -34,22 +43,30 @@ CLR_BOLD = "\033[1m"
 CLR_DIM = "\033[2m"
 CLR_RESET = "\033[0m"
 
-# Curated "camera feed": leads with the real submission photos (realistic_labels/),
-# then adds the two failure modes those photos don't happen to exercise (lot
-# mismatch, fully unreadable label) using the synthetic set, so every distinct
-# validator rule gets demonstrated on camera. Order is deliberate -- tells a
-# story for the video.
+# Curated "camera feed": every failure mode first (while active_step is still
+# 1, so they're unambiguous), then the full happy path -- RM-A through RM-D,
+# genuinely progressing step by step thanks to the active_step fix, with one
+# out-of-sequence attempt (RM-D jumping ahead) caught mid-batch. Leads with
+# the real submission photos (realistic_labels/); the two failure modes those
+# photos don't happen to exercise (lot mismatch, fully unreadable label) use
+# the synthetic set. Order is deliberate -- tells a story for the video.
 DEMO_SEQUENCE = [
-    ("data/mock_labels/realistic_labels/label_RM-A_LOT-20260901A.PNG",
-     "Operator scans Step 1 material -- correct item, correct lot"),
-    ("data/mock_labels/realistic_labels/label_RM-E_LOT-20260914E.PNG",
-     "Operator grabs a floor-leftover drum not on the BOM at all"),
     ("data/mock_labels/sample_invalid_lot_mismatch.jpg",
      "Operator scans the right material, but a mismatched lot"),
     ("data/mock_labels/sample_degraded_valid.jpg",
      "Camera catches a crumpled/blurry label -- lot text unreadable"),
+    ("data/mock_labels/realistic_labels/label_RM-E_LOT-20260914E.PNG",
+     "Operator grabs a floor-leftover drum not on the BOM at all"),
+    ("data/mock_labels/realistic_labels/label_RM-A_LOT-20260901A.PNG",
+     "Operator scans Step 1 material correctly -- batch begins"),
+    ("data/mock_labels/realistic_labels/label_RM-D_LOT-20260904D.PNG",
+     "Operator grabs ahead to Step 4 material -- out of sequence"),
     ("data/mock_labels/realistic_labels/label_RM-B_LOT-20260902B.PNG",
-     "Operator tries to charge Step 2 material out of sequence"),
+     "Operator scans Step 2 material correctly -- batch continues"),
+    ("data/mock_labels/realistic_labels/label_RM-C_LOT-20260903C.PNG",
+     "Operator scans Step 3 material correctly -- batch continues"),
+    ("data/mock_labels/realistic_labels/label_RM-D_LOT-20260904D.PNG",
+     "Operator scans Step 4 material correctly -- batch complete"),
 ]
 
 
@@ -72,6 +89,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="EdgeLock Submission Demo Runner")
     parser.add_argument("--delay", type=float, default=1.5, help="Seconds of simulated 'camera scan' per frame (0 = instant)")
     parser.add_argument("--reset-log", action="store_true", help="Start data/event_log.json fresh for this recording (backs up the old one first)")
+    parser.add_argument("--keep-bom-state", action="store_true", help="Don't reset active_step to 1 before running (continue from wherever it is)")
     args = parser.parse_args()
 
     os.chdir(PROJECT_ROOT)
@@ -84,6 +102,17 @@ def main() -> int:
         print(f"{CLR_YELLOW}[INFO] Existing audit log backed up to {backup_path}{CLR_RESET}")
         with open(log_path, "w", encoding="utf-8") as f:
             f.write("[]")
+
+    if not args.keep_bom_state:
+        with open(bom_path, "r", encoding="utf-8") as f:
+            bom_data = json.load(f)
+        if bom_data.get("active_step") != 1:
+            print(f"{CLR_YELLOW}[INFO] Resetting active_step to 1 for a fresh demo take "
+                  f"(was {bom_data.get('active_step')}). Pass --keep-bom-state to skip this.{CLR_RESET}")
+        bom_data["active_step"] = 1
+        with open(bom_path, "w", encoding="utf-8") as f:
+            json.dump(bom_data, f, indent=2)
+            f.write("\n")
 
     validator = BOMValidator(bom_path=bom_path)
 

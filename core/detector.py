@@ -312,6 +312,16 @@ def run_pipeline(
         operator_id="mfg01",
         location="Reactor R-101 Hatch"
     )
+
+    # 5. 성공적으로 충전(UNLOCK)된 경우에만 active_step 을 다음 단계로 진행.
+    # 이 처리 없이는 첫 성공 이후 모든 후속 자재가 영원히 SEQUENCE_ERROR로
+    # 잠기게 됨 (active_step 이 절대 갱신되지 않기 때문).
+    if val_result["interlock_action"] == "UNLOCK":
+        next_step = validator.advance_active_step()
+        if next_step is not None:
+            print(f"{CLR_GREEN}[BOM] Batch progressed -- active_step advanced to {next_step}.{CLR_RESET}")
+        else:
+            print(f"{CLR_GREEN}[BOM] Batch complete -- all recipe steps have been charged.{CLR_RESET}")
     return event_record
 
 
