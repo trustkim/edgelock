@@ -1,0 +1,14 @@
+# EdgeLock dependencies
+# Core vision pipeline (barcode + OCR label detection)
+opencv-python>=4.9.0
+pyzbar>=0.1.9
+pytesseract>=0.3.10
+Pillow>=10.0.0
+numpy>=1.26.0
+
+# Label dataset generation (dev/demo only)
+python-barcode>=0.15.1
+
+# System requirements (not pip-installable, install via OS package manager):
+#   - zbar shared library   (macOS: brew install zbar | Debian/Ubuntu: apt install libzbar0)
+#   - tesseract-ocr binary  (macOS: brew install tesseract | Debian/Ubuntu: apt install tesseract-ocr)

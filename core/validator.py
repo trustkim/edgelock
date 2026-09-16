@@ -40,6 +40,38 @@ class BOMValidator:
         """Reloads the active BOM file from disk to reflect real-time production recipe updates."""
         self.bom_data = self._load_bom()
 
+    def advance_active_step(self) -> Optional[int]:
+        """
+        Advances active_step to the next step in the recipe sequence and persists
+        the change to the BOM file on disk.
+
+        Without this, active_step never moves past its initial value, so every
+        material after the first legitimately-charged one would incorrectly
+        fail SEQUENCE_ERROR forever -- the interlock would look broken even
+        when every scan was correct. Callers should invoke this only after a
+        successful (UNLOCK) charge, never on a LOCK/deny decision.
+
+        Returns the new active_step, or None if the current step was already
+        the last one in the recipe (batch complete, nothing further to charge).
+        """
+        recipe: List[Dict[str, Any]] = self.bom_data.get("recipe", [])
+        current_step = self.bom_data.get("active_step", 1)
+        remaining_steps = sorted(
+            {item.get("step") for item in recipe if isinstance(item.get("step"), int) and item.get("step") > current_step}
+        )
+        if not remaining_steps:
+            return None
+
+        self.bom_data["active_step"] = remaining_steps[0]
+        self._persist_bom()
+        return remaining_steps[0]
+
+    def _persist_bom(self) -> None:
+        """Writes the current in-memory BOM state back to disk."""
+        with open(self.bom_path, "w", encoding="utf-8") as f:
+            json.dump(self.bom_data, f, indent=2)
+            f.write("\n")
+
     def validate(self, scanned_code: str, scanned_lot: str = "") -> Dict[str, Any]:
         """
         Validates scanned raw material credentials against the active BOM recipe.
@@ -98,7 +130,23 @@ class BOMValidator:
 
         # 3. Lot Number Verification
         allowed_lot = str(matched_item.get("allowed_lot", "")).strip().upper()
-        if allowed_lot and lot_clean and allowed_lot != lot_clean:
+        if allowed_lot and not lot_clean:
+            # Fail-safe deny: a required lot that OCR/scan couldn't read must NOT
+            # be treated as a silent pass. Without this, a blurry/degraded label
+            # (barcode readable, lot text not) would unlock on material code alone.
+            return {
+                "timestamp": timestamp,
+                "batch_id": batch_id,
+                "scanned_code": code_clean,
+                "scanned_lot": lot_clean,
+                "status": "LOT_UNREADABLE",
+                "interlock_action": "LOCK",
+                "reason": (
+                    f"LOT UNREADABLE: Batch requires Lot [{allowed_lot}], but no lot number "
+                    f"was decoded from the scanned label. Fail-safe deny enforced."
+                ),
+            }
+        if allowed_lot and allowed_lot != lot_clean:
             return {
                 "timestamp": timestamp,
                 "batch_id": batch_id,
@@ -188,6 +236,7 @@ if __name__ == "__main__":
         ("RM-G", "LOT-20260820G", "Scenario 2: Unauthorized Raw Material (Default Deny)"),
         ("RM-B", "LOT-20260902B", "Scenario 3: Sequence Violation (Step 2 Premature Feed)"),
         ("RM-A", "LOT-9999999X", "Scenario 4: Lot Number Mismatch (Defective Lot)"),
+        ("RM-A", "", "Scenario 5: Lot Unreadable (Degraded Label, Fail-Safe Deny)"),
     ]
 
     print(f"\n{CLR_BOLD}======================================================================{CLR_RESET}")
