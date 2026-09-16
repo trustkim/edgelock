@@ -68,7 +68,7 @@ coverage.xml
 # FastAPI / Uvicorn logs
 *.log
 
-# Temporary test dumps & camera frame captures (보존할 assets/mock_labels는 제외)
+# Temporary test dumps & camera frame captures (excludes preserved assets/mock_labels)
 tests/__pycache__/
 temp_captures/
 *.tmp
